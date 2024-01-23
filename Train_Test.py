@@ -4,6 +4,7 @@ from random import shuffle
 import random
 import os
 import pickle
+from time import sleep
 
 class card:
     def __init__(self, value, picture = None):
@@ -12,21 +13,21 @@ class card:
 
 
 class player:
-    def __init___(self, genomes = [], id = None):
+    def __init__(self, genomes = [], id = None):
         self.hand = 0
         self.aces_count = 0
         self.genomes = genomes
         self.genes = []
         self.cash = 10000
-        self.id
+        self.id = id
     
     #returns true if didn't lose
-    def draw_card(self, deck):
+    def draw_card(self):
+        global deck
         if deck[-1] == ace:
             self.aces_count +=1
-        self.hand += deck[-1]
+        self.hand += deck[-1].value
         deck = np.delete(deck, -1)
-        
         if self.hand < 21:
             return True
         elif self.aces_count == 0:
@@ -44,52 +45,64 @@ class player:
         return False
     
     def check_genes(self, croupier_hand):
-        if self.genes is None:
+        if (len(self.genomes)) == 0:
+            self.genes.append(self.hand)
+            self.genes.append(croupier_hand)
             return False
         index = 0
         while index < len(self.genomes):
             if self.hand != self.genomes[index][0] and croupier_hand != self.genomes[index][1]:
                 index+=1
                 continue
-            return index
-        self.genes.append([self.hand, croupier_hand, 50])
+            elif self.hand == self.genomes[index][0] and croupier_hand == self.genomes[index][1]:
+                return index
+            index+=1
+        self.genes.append(self.hand)
+        self.genes.append(croupier_hand)
         return False
 
 
     def hit(self, is_croupier, index = None, answer = int(random.uniform(0,2)), answer_num = 3):
-        #(answer = 0 = false) It's int not boolean for easier accessing of genes later
-        if answer == 0:
-            return True
-        check = self.draw_card()
+        global deck
         if is_croupier == True:
-            return True
+            self.draw_card()
+            return 2
+        #(answer = 0 = false) It's int not boolean for easier accessing of genes later
+        if answer == 0 and index is None:
+            self.genes.append(answer)
+            return 1
+        elif answer == 0:
+            return 1
+        check = self.draw_card()
         
         #if hand exceeded 21
         if check is False:
+            self.genes.append(answer)
             self.cash -= 50
-            return False
+            return 0
         
         #if there's no index, then there aren't any according genes
         if index is None:
-            self.genes.append(self.hand)
             answer = int(random.uniform(0,2))
             self.genes.append(answer)
-            self.hit(answer)
-            return True
+            self.genes.append(self.hand)
+            self.hit(False, None, answer)
+            return 3
         
         #if answer is not existent within accessed genome, then create new genome with current genes and keep playing
-        elif answer_num > len(self.genes[index]):
-            self.genes = np.array(self.genomes[index])
+        elif answer_num > len(self.genomes[index]):
+            self.genes = self.genomes[index]
             self.genes[-1] = self.hand
             answer = int(random.uniform(0,2))
-            self.genes.append(answer)
-            self.hit(answer, index, answer_num)
-            return True
+            self.append(answer)
+            self.append(self.genes)
+            self.hit(False, answer, index, answer_num)
+            return 4
         
         #do what the genes tell you to do while the genes match
         while self.hand == self.genomes[index][answer_num - 1]:
-            self.hit(self.genomes[index][answer_num], index, answer_num+2)
-            return True
+            self.hit(False, index, self.genomes[index][answer_num], answer_num+2)
+            return 5
     
     def result_check(self, croupier_hand):
         if self.hand > croupier_hand:
@@ -98,26 +111,25 @@ class player:
             self.cash -= 50
     
     def add_genes(self):
-        self.genes = np.array(self.genes)
-        self.genomes.append(self.genes)
-
+        if len(self.genes) > 1:
+            self.genomes.append(self.genes)
 
 
 def shuffle_deck():
-    deck = np.empty(52)
-    two_list = np.array(two,two,two,two)
-    three_list = np.array(three,three,three,three)
-    four_list = np.array(four,four,four,four)
-    five_list = np.array(five,five,five,five)
-    six_list = np.array(six,six,six,six)
-    seven_list = np.array(seven,seven,seven,seven)
-    eight_list = np.array(eight,eight,eight,eight)
-    nine_list = np.array(nine,nine,nine,nine)
-    ten_list = np.array(ten,ten,ten,ten)
-    jack_list = np.array(jack,jack,jack,jack)
-    queen_list = np.array(queen,queen,queen,queen)
-    king_list = np.array(king,king,king,king)
-    ace_list = np.array(ace,ace,ace,ace)
+    deck = np.empty(0)
+    two_list = np.array([two,two,two,two])
+    three_list = np.array([three,three,three,three])
+    four_list = np.array([four,four,four,four])
+    five_list = np.array([five,five,five,five])
+    six_list = np.array([six,six,six,six])
+    seven_list = np.array([seven,seven,seven,seven])
+    eight_list = np.array([eight,eight,eight,eight])
+    nine_list = np.array([nine,nine,nine,nine])
+    ten_list = np.array([ten,ten,ten,ten])
+    jack_list = np.array([jack,jack,jack,jack])
+    queen_list = np.array([queen,queen,queen,queen])
+    king_list = np.array([king,king,king,king])
+    ace_list = np.array([ace,ace,ace,ace])
     
     deck = np.append(deck, two_list) 
     deck = np.append(deck, three_list)
@@ -133,49 +145,63 @@ def shuffle_deck():
     deck = np.append(deck, king_list)
     deck = np.append(deck, ace_list)
     shuffle(deck)
+    return deck
 
 
-def train_test():
-    deck = shuffle_deck()
+def train_test(bot = player):
     for _ in range(0,2):
-        bot.draw_card(deck)
-    croupier.draw_card(deck)
+        bot.draw_card()
+    croupier.draw_card()
     
     index = bot.check_genes(croupier.hand)
     if index == False:
         bot.hit(False)
     elif index is int:
-        bot.hit(False, index)
+        bot.hit(False, index, bot.genomes[index][3])
     
     while croupier.hand < 17:
-        croupier.draw_card(True)
+        croupier.hit(True)
     if croupier.hand > 21:
+        bot.add_genes()
         bot.cash += 50
+        bot.hand = 0
+        croupier.hand = 0
+        bot.genes = []
+        return bot
     
-    bot.result_check()
+    bot.result_check(croupier.hand)
     bot.add_genes()
-    bots_list = np.append(bots_list, bot)
-#after every bot iteration of this function, bot.genomes should change to np.array
+    bot.hand = 0
+    croupier.hand = 0
+    bot.genes = []
+    return bot
 
-def crossover_mutate(best_num):
-    elites = np.empty(best_num)
+
+def crossover_mutate(best_num, bots_list, kids):
+    elites = np.empty(0)
+    cash = np.empty(0)
+    for i in range(0,99):
+        cash = np.append(cash, bots_list[i].cash)
+    print("best cash: ", cash.mean())
     for _ in range(0,best_num):
         #add to elites element from bots_list with the index of maximum cash
-        elites = np.append(elites ,bots_list[np.where(bots_list.cash == bots_list.cash.max())])
-        bots_list = np.delete(bots_list, bots_list.cash == bots_list.cash.max())
-        genepool = []
+        elites = np.append(elites ,bots_list[np.where(cash == cash.max())[0][0]])
+        cash = np.delete(cash, cash == cash.max())
+    
+    genepool = []
     elite_id = 0
     for elite in elites:
-        #print(elite.cash)
         elite.id = elite_id
+        elite.cash = 10000
         kids = np.append(kids, elite)
         genepool.append(elite.genomes)
         elite_id += 1
-    genepool = np.array(genepool)
-    for i in range (5,200):
+
+    for i in range (5,100):
         shuffle(genepool)
         bot = player(genepool[:601],i)
         kids = np.append(kids, bot)
+    return kids
 
 #variables
 two = card(2)
@@ -192,10 +218,28 @@ queen = card(10)
 king = card(10)
 ace = card(11)
 
-bots_list = np.empty(200)
-kids = np.empty(200)
+bots_list = np.empty(0)
+kids = np.empty(0)
 
-bot = player()
+bot = player([], 0)
 croupier = player()
+deck = shuffle_deck()
+for I in range (0,100):
+    for _ in range(0,600):
+        train_test(bot)
+        deck = shuffle_deck()
+    bot = player([], I+1)
+    bots_list = np.append(bots_list, bot)
 
+kids = crossover_mutate(5, bots_list, kids)
+bots_list = np.empty(0)
 
+for _ in range (0,10):
+    for I in range (0,100):
+        for i in range(0,600):
+            train_test(bot)
+            deck = shuffle_deck()
+        bot = kids[I]
+        bots_list = np.append(bots_list, bot)
+    kids = crossover_mutate(5, bots_list, kids)
+    bots_list = np.empty(0)
