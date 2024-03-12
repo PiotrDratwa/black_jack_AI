@@ -36,6 +36,7 @@ func removeDuplicates(nums []int) int {
 	return length
 }
 
+
 //problem 28. Find the index of the first occurence in a String
 //runtime 1 ms memory 2.00 mb (better than 94% of Go users)
 //https://leetcode.com/problems/find-the-index-of-the-first-occurrence-in-a-string/?envType=featured-list&envId=top-interview-questions?envType=featured-list&envId=top-interview-questions
@@ -67,8 +68,19 @@ func strStr(haystack string, needle string) int {
 	return idx
 }
 
+
+
+func plusOne(digits []int) {
+    var num int = 0
+	var expn int = len(digits)
+	for _, val := range digits{
+		num += val^expn
+		expn--
+	}
+	fmt.Println(num)
+}
+
+
 func main() {
-	a := strStr("hello", "ll")
-	//fmt.Printf("%s\n", a)
-	fmt.Printf("%d", a)
+	plusOne([1,2,3])
 }
