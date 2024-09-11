@@ -1,17 +1,18 @@
 from Train_Test import two, player, shuffle_deck
+from new_train_test import player as new_player
 import unittest
 import numpy as np
 import pandas as pd
 
 class TestGroupByMethods(unittest.TestCase):
-    
-    def test_shuffle_deck(self): 
+
+    def test_shuffle_deck(self):
         deck = shuffle_deck()
         self.assertEqual(len(deck), 52, f'There should be 52 cards in a deck and there is:{len(deck)}')
         if np.all(deck[:4] == two) == True:
             deck = shuffle_deck()
             self.assertEqual(deck[:4] == [two,two,two,two], 'The deck probably is not shuffled')
-    
+
     def test_draw_card(self):
         global deck
         deck = shuffle_deck()
@@ -20,7 +21,7 @@ class TestGroupByMethods(unittest.TestCase):
             bot.draw_card()
         self.assertTrue(bot.hand < 22, f'player hand should be below 22 and above 0 after two draws. hand = {bot.hand}')
         self.assertTrue(bot.hand > 0, "hand should be above 0")
-    
+
     def test_check_genes(self):
         bot = player()
         self.assertFalse(bot.check_genes(18), 'check genes should return false, if there are not any genes')
@@ -28,7 +29,7 @@ class TestGroupByMethods(unittest.TestCase):
         bot.genomes = [[18, 21],[5,17]]
         self.assertTrue(bot.check_genes(17) == 1, "check genes should return index = 1")
         self.assertFalse(bot.check_genes(18), "check genes should return false, if there are not any according genes")
-    
+
     def test_result_check(self):
         bot = player()
         bot.hand = 2
@@ -38,7 +39,7 @@ class TestGroupByMethods(unittest.TestCase):
         self.assertTrue(bot.cash == 9950, 'bot should lose 50 cash after losing')
         bot.result_check(1)
         self.assertTrue(bot.cash == 10000, 'bot should gain 50 cash after winning')
-    
+
     #testuje funkcje która gra póki bedziesz dobierać, hit(26) testuje czy zwroci false gdy przebijesz 21
     def test_hit(self):
         bot = player()
@@ -60,11 +61,26 @@ class TestGroupByMethods(unittest.TestCase):
         bot.genomes = np.array([[1,12]])
         self.assertTrue(bot.hit(False, 0, 1) == 4, "if answer is not in genes, then it should return 4")
 
+    def test_new_hit(self):
+        bot = new_player()
+        croupier = new_player()
+        croupier.hand = 10
+        bot.hand = 13
+        new_hands = np.empty(10)
+        for i in range(10):
+            bot.hit()
+            new_hands[i] = bot.hand()
+            bot.hand = 13
+
+        new_hands_half = new_hands[:5]
+        self.assertFalse(new_hands == new_hands_half, 'hitting without genes is not random')
+
 
 deck = shuffle_deck()
 test = TestGroupByMethods()
-test.test_shuffle_deck()
+'''test.test_shuffle_deck()
 test.test_draw_card()
 test.test_check_genes()
 test.test_result_check()
-test.test_hit()
+test.test_hit()'''
+test.test_new_hit()

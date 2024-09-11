@@ -20,7 +20,7 @@ class player:
         self.genes = []
         self.cash = 10000
         self.id = id
-    
+
     #returns true if didn't lose
     def draw_card(self):
         global deck
@@ -33,17 +33,16 @@ class player:
         elif self.aces_count == 0:
             self.cash -= 100
             return False
-        
+
         #if player loses and there's aces then it will turn them into 1 until he no longer loses
-        aces_remain = self.aces_count
-        while aces_remain > 0:
+        while self.aces_count > 0:
             self.hand - 10
-            aces_remain -= 1
+            self.aces_count -= 1
         if self.hand < 21:
             return True
         self.cash -= 100
         return False
-    
+
     def check_genes(self, croupier_hand):
         if (len(self.genomes)) == 0:
             self.genes.append(self.hand)
@@ -51,7 +50,9 @@ class player:
             return False
 
         for gene in self.genomes:
-            if self.hand != gene[0] and croupier_hand != gene[1]:
+            if self.hand != gene[0]:
+                continue
+            elif croupier_hand != gene[1]:
                 continue
             else:
                 return gene
@@ -62,34 +63,34 @@ class player:
     def hit(self, gene = False, answer = int(random.uniform(0,2)), answer_num = 2, is_croupier = False):
         global deck
         if is_croupier == True:
-            self.draw_card
+            self.draw_card()
             return 0
         check = self.draw_card()
-        
+
         if check is False:
             self.genes.append(answer)
             return 2
-        
+
         if gene is False:
             answer = int(random.uniform(0,2))
             self.genes.append(answer)
             self.genes.append(self.hand)
             return answer
-        
+
         if answer_num > len(gene):
             #self.genes = self.genomes[index]
             #self.genes[-1] = self.hand
             answer = int(random.uniform(0,2))
             #self.append(answer)
             #self.append(self.genes)
-            return answer 
-        
+            return answer
+
         #trzeba jakoś ogarnąć żeby ten answer num przesuwał się bez rekurencji
-        if self.hand == gene[answer_num + 1]: 
+        if self.hand == gene[answer_num + 1]:
             return gene[answer_num + 2]
         return int(random.uniform(0,2))
-    
-    
+
+
     def old_hit(self, gene = None, answer = int(random.uniform(0,2)), answer_num = 2, is_croupier = False):
         global deck
         print('outer')
@@ -116,7 +117,7 @@ class player:
             self.genes.append(self.hand)
             self.hit(False, None, answer)
             return 3
-        print("here1")    
+        print("here1")
         #if answer is not existent within accessed genome, then create new genome with current genes and keep playing
         if answer_num > len(gene):
             #self.genes = self.genomes[index]
@@ -125,19 +126,19 @@ class player:
             #self.append(answer)
             #self.append(self.genes)
             self.hit(False, answer, None, answer_num)
-            return 4 
+            return 4
         #do what the genes tell you to do while the genes match
         if self.hand == gene[answer_num - 2]:
             self.hit(False, gene, gene[answer_num], answer_num+2)
             return 5
         print("here2")
-    
+
     def result_check(self, croupier_hand):
         if self.hand > croupier_hand:
             self.cash += 100
         if self.hand < croupier_hand:
             self.cash -= 100
-    
+
     def add_genes(self):
         if len(self.genes) > 1:
             self.genomes.append(self.genes)
@@ -158,8 +159,8 @@ def shuffle_deck():
     queen_list = np.array([queen,queen,queen,queen])
     king_list = np.array([king,king,king,king])
     ace_list = np.array([ace,ace,ace,ace])
-    
-    deck = np.append(deck, two_list) 
+
+    deck = np.append(deck, two_list)
     deck = np.append(deck, three_list)
     deck = np.append(deck, four_list)
     deck = np.append(deck, five_list)
@@ -175,30 +176,31 @@ def shuffle_deck():
     shuffle(deck)
     return deck
 
-def hit_loop(bot, gene, answer = int(random.uniform(0,2))):
-    if gene == False:
-        while answer == 1:
-            answer = bot.hit()
-    else:
-        answer_num = 2
-        #print(gene)
-        answer == gene[answer_num]
-        while answer == 1:
-            try:
-                answer = bot.hit(gene, gene[answer_num], answer_num)
-            except IndexError:
-                answer = bot.hit()
+def hit_loop_random(bot):
+    answer = int(random.uniform(0,2))
+    while answer == 1:
+        answer = bot.hit()
 
-def train_test(bot = player):
+def hit_loop_deter(bot, gene):
+    answer_num = 2
+    #print(gene)
+    answer == gene[answer_num]
+    while answer == 1:
+        try:
+            answer = bot.hit(gene, gene[answer_num], answer_num)
+        except IndexError:
+            answer = bot.hit()
+
+def train_test(bot:player):
     for _ in range(0,2):
         bot.draw_card()
     croupier.draw_card()
-    
+
     gene = bot.check_genes(croupier.hand)
     if gene == False:
-        hit_loop(bot, False)
+        hit_loop_random(bot)
     else:
-        hit_loop(bot, gene)
+        hit_loop_deter(bot, gene)
     if bot.hand > 21:
         bot.add_genes()
         bot.cash -= 100
@@ -215,7 +217,7 @@ def train_test(bot = player):
         croupier.hand = 0
         bot.genes = []
         return bot
-    
+
     bot.result_check(croupier.hand)
     bot.add_genes()
     bot.hand = 0
@@ -233,7 +235,7 @@ def crossover_mutate(best_num, bots_list, kids):
     for _ in range(0,best_num):
         #add to elites element from bots_list with the index of maximum cash
         elites = np.append(elites ,bots_list[np.where(cash == cash.max())[0][0]])
-        cash_best += cash.max() 
+        cash_best += cash.max()
         cash = np.delete(cash, cash == cash.max())
     print("cash = ", cash_best/5)
     genepool = []
