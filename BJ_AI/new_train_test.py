@@ -12,7 +12,7 @@ class card:
         self.picture = picture
 
 class player:
-    def __init__(self, genomes = np.empty((400,3)), id = None):
+    def __init__(self, genomes = np.empty((210,3)), id = None):
         self.hand = 0
         self.aces_count = 0
         self.genomes = genomes
@@ -168,6 +168,46 @@ def train_test(deck, bot:player):
     bot.genes = np.empty(3)
     return bot
 
+def crossover_mutate(best_num, bots_num, bots_list, kids):
+    elites = [None] * best_num
+    cash = np.empty(bots_num)
+    cash_best = 0
+    for i in range(bots_num):
+        cash[i] = bots_list[i].cash
+
+    for i in range(best_num):
+        #add to elites element from bots_list with the index of maximum cash
+        elites[i] = bots_list[np.where(cash == cash.max())[0][0]]
+        cash_best += cash.max()
+        cash = np.delete(cash, cash == cash.max())
+    print("cash = ", cash_best/5)
+
+    genepool = np.empty((bots_num*200, 3))
+    elite_id = 0
+    elite_cash = 0
+    i = 0
+    a = 0
+    for elite in elites:
+        elite.id = elite_id
+        elite_cash += elite.cash
+        elite.cash = 10000
+        kids[i] = elite
+        for gene in elite.genomes:
+            genepool[a] = gene
+            a+=1
+        elite_id += 1
+        i+=1
+
+    #print(genepool)
+    for i in range (best_num, bots_num):
+        np.random.shuffle(genepool)
+        bot = player(genepool[:200],i)
+        kids[i] = bot
+
+    return kids
+
+
+
 two = card(2)
 three = card(3)
 four = card(4)
@@ -184,7 +224,7 @@ ace = card(11)
 deck = shuffle_deck()
 
 bots_list = []
-kids = []
+kids = [None] * 50
 
 bot = player(id=0)
 croupier = player()
@@ -193,6 +233,10 @@ for I in range (0,50):
     for _ in range(0,200):
         train_test(deck, bot)
         deck = shuffle_deck()
-    print(I)
     bots_list.append(bot)
     bot = player(id=(I+1))
+
+crossover_mutate(5, 50, bots_list, kids)
+
+#print(kids)
+print(kids[8].genomes)
