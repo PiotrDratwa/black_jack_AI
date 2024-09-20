@@ -5,6 +5,7 @@ import random
 import os
 import pickle
 from time import sleep
+import copy
 
 class card:
     def __init__(self, value, picture = None):
@@ -12,10 +13,10 @@ class card:
         self.picture = picture
 
 class player:
-    def __init__(self, genomes = np.empty((210,3)), id = None):
+    def __init__(self, genomes = None, id = None):
         self.hand = 0
         self.aces_count = 0
-        self.genomes = genomes
+        self.genomes = np.empty((210, 3)) if genomes is None else copy.deepcopy(genomes)
         self.append_index = 0
         self.genes = np.empty(3)
         self.cash = 10000
@@ -72,10 +73,13 @@ class player:
             else:
                 print(f'error: answer is neither 0 or 1, it is{gene}')
 
-        answer = int(random.uniform(0,2))
+        answer = int(random.uniform(0, 2))
         self.genes[2] = answer
-        self.genomes[self.append_index] = self.genes
-        self.append_index += 1
+
+        if self.append_index < len(self.genomes):
+            self.genomes[self.append_index] = self.genes
+            self.append_index += 1
+
         self.genes = np.empty(3)
 
         while answer == 1:
@@ -83,14 +87,17 @@ class player:
             if result == False:
                 return self.hand
 
-            gene = bot.check_genes(croupier.hand)
+            gene = self.check_genes(croupier.hand)
             if isinstance(gene, np.ndarray):
                 return self.hit(deck, gene)
 
-            answer = int(random.uniform(0,2))
+            answer = int(random.uniform(0, 2))
             self.genes[2] = answer
-            self.genomes[self.append_index] = self.genes
-            self.append_index += 1
+
+            if self.append_index < len(self.genomes):
+                self.genomes[self.append_index] = self.genes
+                self.append_index += 1
+
             self.genes = np.empty(3)
 
     def result_check(self, croupier_hand):
@@ -139,7 +146,8 @@ def train_test(deck, bot:player):
     croupier.draw_card(deck)
 
     gene = bot.check_genes(croupier.hand)
-    bot.hit(deck)
+
+    bot.hit(deck, gene)
 
     if bot.hand > 21:
         bot.cash -= 100
@@ -150,6 +158,11 @@ def train_test(deck, bot:player):
 
     while croupier.hand < 17:
         croupier.draw_card(deck)
+    '''
+    if isinstance(gene, np.ndarray):
+        if gene[0] == 0:
+            print(f'gen ma wartosc : {gene} | reka bota {bot.hand}')
+    '''
 
     if croupier.hand > 21:
         bot.cash += 100
@@ -226,17 +239,29 @@ deck = shuffle_deck()
 bots_list = []
 kids = [None] * 50
 
-bot = player(id=0)
 croupier = player()
 
-for I in range (0,50):
-    for _ in range(0,200):
-        train_test(deck, bot)
+for I in range (50):
+    new_player = player(id=I)
+    bots_list.append(new_player)
+    for i in range(200):
+        train_test(deck, bot = bots_list[I])
         deck = shuffle_deck()
-    bots_list.append(bot)
-    bot = player(id=(I+1))
+        if I == 1:
+            print(bots_list[1].genomes[bots_list[1].append_index-1], bots_list[1].append_index-1)
+        #sleep(0.1)
 
-crossover_mutate(5, 50, bots_list, kids)
+#print(bots_list[8].genomes)
+#print(bots_list[0].genomes)
+
+
+
+#crossover_mutate(5, 50, bots_list, kids)
 
 #print(kids)
-print(kids[8].genomes)
+#print(kids[8].genomes)
+
+
+#TODO
+#skąd pojawiają się zera w miejscu ręki krupiera w genach
+#czemu tylko 10-20 genów jest zapisywanych
