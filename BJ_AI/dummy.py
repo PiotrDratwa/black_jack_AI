@@ -1,6 +1,5 @@
-import numpy as np
-from new_train_test import player, shuffle_deck, card
+import random
 
-list = [1,2,3,4,5,6,7,8]
 
-print(list[:7])
+for i in range(100):
+    print(random.uniform(0,1))
